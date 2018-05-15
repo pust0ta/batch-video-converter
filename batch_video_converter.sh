@@ -8,7 +8,7 @@
 #fi
 
 if [ $# -lt 1 ]; then
-	echo -e "Параметры не обнаружены, укажите расширения видеофайлов через запятую после \"-t\""
+	echo -e "Параметры не обнаружены, укажите расширения видеофайлов через запятую после \"-t\" или \"-t all\" для стандартного набора расширений"
 	exit 1
 fi
 
@@ -45,7 +45,11 @@ while getopts "t:" opt
 	do
 	case "${opt}" in
 		t)
-			batchVideoConverter $OPTARG
+			if [ $OPTARG = "all" ]; then
+				batchVideoConverter MTS,mts,MP4,mp4,3GP,3gp,AVI,avi,WMV,wmv,MOV,mov,VOB,vob,MPG,mpg
+			else
+				batchVideoConverter $OPTARG
+			fi
 			;;
 		*)
 			usage
