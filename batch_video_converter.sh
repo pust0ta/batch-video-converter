@@ -46,7 +46,7 @@ while getopts "t:" opt
 	case "${opt}" in
 		t)
 			if [ $OPTARG = "all" ]; then
-				batchVideoConverter MTS,mts,MP4,mp4,3GP,3gp,AVI,avi,WMV,wmv,MOV,mov,VOB,vob,MPG,mpg
+				batchVideoConverter MTS,mts,MP4,mp4,3GP,3gp,AVI,avi,WMV,wmv,MOV,mov,VOB,vob,MPG,mpg,m4v,M4V,ogv,OGV,webm,WEBM
 			else
 				batchVideoConverter $OPTARG
 			fi
