@@ -22,6 +22,8 @@ usage() { echo "Укажите расширения видеофайлов че�
 ECHO=/bin/echo
 FFMPEG=/usr/bin/ffmpeg
 
+fileformats=''
+crf=20
 
 batchVideoConverter() {
 	extensions=$1
@@ -29,11 +31,13 @@ batchVideoConverter() {
 	IFS=$','
 	for extension in $extensions; do
 		IFS=$'\n'
-		$ECHO "Работаем с файлами типа $extension"
+		$ECHO  -en "\033[1;31mРаботаем с файлами типа $extension"
+		tput sgr0;
+		$ECHO
 		
 		for i in $(find -name "*.$extension"); do
 			DATE=`stat -c %y "$i"`
-			ffmpeg -i "$i" -n -metadata data="$DATE" -c:v libx264 -preset slower -c:a aac -crf 20 "${i%.$extension}.mkv"
+			ffmpeg -i "$i" -n -metadata data="$DATE" -c:v libx264 -preset slower -c:a aac -crf $crf "${i%.$extension}.mkv"
 		done
 	done
 	notify-send "Конвертация завершена в $(date)"
@@ -41,18 +45,24 @@ batchVideoConverter() {
 }
 
 
-while getopts "t:" opt
+while getopts "q:t:" opt
 	do
 	case "${opt}" in
 		t)
 			if [ $OPTARG = "all" ]; then
-				batchVideoConverter MTS,mts,MP4,mp4,3GP,3gp,AVI,avi,WMV,wmv,MOV,mov,VOB,vob,MPG,mpg,m4v,M4V,ogv,OGV,webm,WEBM
+				fileformats='MTS,mts,MP4,mp4,3GP,3gp,AVI,avi,WMV,wmv,MOV,mov,VOB,vob,MPG,mpg,m4v,M4V,ogv,OGV,webm,WEBM'
 			else
-				batchVideoConverter $OPTARG
+				fileformats=$OPTARG
 			fi
 			;;
+		q)	crf=$OPTARG;;
 		*)
 			usage
 			;;
 	esac
 done
+shift $(($OPTIND - 1))
+
+batchVideoConverter $fileformats
+
+exit 0
