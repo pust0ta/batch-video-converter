@@ -38,6 +38,7 @@ batchVideoConverter() {
 		for i in $(find -name "*.$extension"); do
 			DATE=`stat -c %y "$i"`
 			ffmpeg -i "$i" -n -metadata data="$DATE" -c:v libx264 -preset slower -c:a aac -crf $crf "${i%.$extension}.mkv"
+			touch -m --date="$DATE" "${i%.$extension}.mkv"
 		done
 	done
 	notify-send "Конвертация завершена в $(date)"
@@ -50,7 +51,7 @@ while getopts "q:t:" opt
 	case "${opt}" in
 		t)
 			if [ $OPTARG = "all" ]; then
-				fileformats='MTS,mts,MP4,mp4,3GP,3gp,AVI,avi,WMV,wmv,MOV,mov,VOB,vob,MPG,mpg,m4v,M4V,ogv,OGV,webm,WEBM'
+				fileformats='MTS,mts,MP4,mp4,3GP,3gp,3gpp,AVI,avi,WMV,wmv,MOV,mov,VOB,vob,MPG,mpg,m4v,M4V,ogv,OGV,webm,WEBM'
 			else
 				fileformats=$OPTARG
 			fi
