@@ -22,7 +22,8 @@ usage() { echo "Укажите расширения видеофайлов че�
 ECHO=/bin/echo
 FFMPEG=/usr/bin/ffmpeg
 
-fileformats=''
+fileformats='MTS,mts,MP4,mp4,3GP,3gp,3gpp,AVI,avi,WMV,wmv,MOV,mov,VOB,vob,MPG,mpg,m4v,M4V,ogv,OGV,webm,WEBM'
+vcodec='libx264'
 crf=20
 
 batchVideoConverter() {
@@ -37,7 +38,7 @@ batchVideoConverter() {
 		
 		for i in $(find -name "*.$extension"); do
 			DATE=`stat -c %y "$i"`
-			ffmpeg -i "$i" -n -metadata data="$DATE" -c:v libx264 -preset slower -c:a aac -crf $crf "${i%.$extension}.mkv"
+			ffmpeg -i "$i" -n -metadata data="$DATE" -c:v $vcodec -preset slower -c:a aac -crf $crf "${i%.$extension}.mkv"
 			touch -m --date="$DATE" "${i%.$extension}.mkv"
 		done
 	done
@@ -46,16 +47,11 @@ batchVideoConverter() {
 }
 
 
-while getopts "q:t:" opt
+while getopts "q:t:c:" opt
 	do
 	case "${opt}" in
-		t)
-			if [ $OPTARG = "all" ]; then
-				fileformats='MTS,mts,MP4,mp4,3GP,3gp,3gpp,AVI,avi,WMV,wmv,MOV,mov,VOB,vob,MPG,mpg,m4v,M4V,ogv,OGV,webm,WEBM'
-			else
-				fileformats=$OPTARG
-			fi
-			;;
+		t)	fileformats=$OPTARG;;
+		c)  vcodec=$OPTARG;;
 		q)	crf=$OPTARG;;
 		*)
 			usage
@@ -63,6 +59,13 @@ while getopts "q:t:" opt
 	esac
 done
 shift $(($OPTIND - 1))
+
+if [ $vcodec == "265" -o $vcodec == "hevc" -o $vcodec == "libx265" ]; then
+	vcodec="libx265"
+ 	if [ ${crf} -eq "20" ]; then
+ 		crf=25
+ 	fi
+fi
 
 batchVideoConverter $fileformats
 
