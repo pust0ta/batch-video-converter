@@ -7,10 +7,10 @@
 #	exit 1
 #fi
 
-if [ $# -lt 1 ]; then
-	echo -e "Параметры не обнаружены, укажите расширения видеофайлов через запятую после \"-t\" или \"-t all\" для стандартного набора расширений"
-	exit 1
-fi
+#if [ $# -lt 1 ]; then
+#	echo -e "Параметры не обнаружены, запуск со параметрами по умолчанию. \n укажите расширения видеофайлов через запятую после \"-t\", \"-c\" для выбора кодека, \"-q\" для указания crf (18-30), \"-p\" для выбора пресета ffmpeg"
+#	exit 1
+#fi
 
 
 usage() { echo "Укажите расширения видеофайлов через запятую после \"-t\"" 1>&2; exit 1; }
@@ -23,8 +23,12 @@ ECHO=/bin/echo
 FFMPEG=/usr/bin/ffmpeg
 
 fileformats='MTS,mts,MP4,mp4,3GP,3gp,3gpp,AVI,avi,WMV,wmv,MOV,mov,VOB,vob,MPG,mpg,m4v,M4V,ogv,OGV,webm,WEBM'
-vcodec='libx264'
+#vcodec='libx264'
+vcodec='libx265'
 crf=20
+crfisset="FALSE"
+preset="slow"
+presetisset="FALSE"
 
 batchVideoConverter() {
 	extensions=$1
@@ -38,7 +42,7 @@ batchVideoConverter() {
 		
 		for i in $(find -name "*.$extension"); do
 			DATE=`stat -c %y "$i"`
-			ffmpeg -i "$i" -n -metadata data="$DATE" -c:v $vcodec -preset slower -c:a aac -crf $crf "${i%.$extension}.mkv"
+			ffmpeg -i "$i" -n -metadata data="$DATE" -c:v $vcodec -preset $preset -c:a aac -crf $crf "${i%.$extension}.mkv"
 			touch -m --date="$DATE" "${i%.$extension}.mkv"
 		done
 	done
@@ -47,12 +51,17 @@ batchVideoConverter() {
 }
 
 
-while getopts "q:t:c:" opt
+while getopts "q:t:c:p:" opt
 	do
 	case "${opt}" in
+		c)	vcodec=$OPTARG;;
+		p)	userpreset=$OPTARG
+			presetisset="TRUE"
+			;;
 		t)	fileformats=$OPTARG;;
-		c)  vcodec=$OPTARG;;
-		q)	crf=$OPTARG;;
+		q)	usercrf=$OPTARG
+			crfisset="TRUE"
+			;;
 		*)
 			usage
 			;;
@@ -62,9 +71,26 @@ shift $(($OPTIND - 1))
 
 if [ $vcodec == "265" -o $vcodec == "hevc" -o $vcodec == "libx265" ]; then
 	vcodec="libx265"
- 	if [ ${crf} -eq "20" ]; then
- 		crf=25
- 	fi
+	preset="slow"
+	if [ ${presetisset} == "TRUE" ]; then
+		preset=$userpreset
+	fi
+	crf=25
+	if [ ${crfisset} == "TRUE" ]; then
+		crf=$usercrf
+	fi
+fi
+
+if [ $vcodec == "264" -o $vcodec == "libx264" ]; then
+	vcodec="libx264"
+	preset="slower"
+	if [ ${presetisset} == "TRUE" ]; then
+		preset=$userpreset
+	fi
+	crf=25
+	if [ ${crfisset} == "TRUE" ]; then
+		crf=$usercrf
+	fi
 fi
 
 batchVideoConverter $fileformats
