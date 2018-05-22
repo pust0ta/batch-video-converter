@@ -22,6 +22,8 @@ usage() { echo "Укажите расширения видеофайлов че�
 ECHO=/bin/echo
 FFMPEG=/usr/bin/ffmpeg
 
+maxdepth=10
+#findcommand=`find -name "*.$extension"`
 fileformats='MTS,mts,MP4,mp4,3GP,3gp,3gpp,AVI,avi,WMV,wmv,MOV,mov,VOB,vob,MPG,mpg,m4v,M4V,ogv,OGV,webm,WEBM'
 #vcodec='libx264'
 vcodec='libx265'
@@ -40,7 +42,7 @@ batchVideoConverter() {
 		tput sgr0;
 		$ECHO
 		
-		for i in $(find -name "*.$extension"); do
+		for i in $(find -maxdepth $maxdepth -name "*.$extension"); do
 			DATE=`stat -c %y "$i"`
 			ffmpeg -i "$i" -n -metadata data="$DATE" -c:v $vcodec -preset $preset -c:a aac -crf $crf "${i%.$extension}.mkv"
 			touch -m --date="$DATE" "${i%.$extension}.mkv"
@@ -51,10 +53,11 @@ batchVideoConverter() {
 }
 
 
-while getopts "q:t:c:p:" opt
+while getopts "q:t:c:p:d:" opt
 	do
 	case "${opt}" in
 		c)	vcodec=$OPTARG;;
+		d)	maxdepth=$OPTARG;;
 		p)	userpreset=$OPTARG
 			presetisset="TRUE"
 			;;
