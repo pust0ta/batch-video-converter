@@ -20,17 +20,20 @@ usage() { echo "Укажите расширения видеофайлов че�
 #fi
 
 ECHO=/bin/echo
-FFMPEG=/usr/bin/ffmpeg
+FFMPEG=/opt/ffmpeg/bin/ffmpeg
 
 maxdepth=10
 #findcommand=`find -name "*.$extension"`
-fileformats='MTS,mts,MP4,mp4,3GP,3gp,3gpp,AVI,avi,WMV,wmv,MOV,mov,VOB,vob,MPG,mpg,m4v,M4V,ogv,OGV,webm,WEBM'
-#vcodec='libx264'
-vcodec='libx265'
-crf=20
+fileformats='MTS,mts,MP4,mp4,3GP,3gp,3gpp,AVI,avi,WMV,wmv,MOV,mov,VOB,vob,MPG,mpg,m4v,M4V,ogv,OGV,webm,WEBM,MOD,mod,MKV,m2ts,M2TS,flv,FLV'
+#vcodec='nvenc'
+vcodec='nvhevc'
+#vcodec='264'
+#crf=20
+crf=25
 crfisset="FALSE"
 preset="slow"
 presetisset="FALSE"
+hwoutput='cuda'
 
 batchVideoConverter() {
 	extensions=$1
@@ -44,7 +47,9 @@ batchVideoConverter() {
 		
 		for i in $(find -maxdepth $maxdepth -name "*.$extension"); do
 			DATE=`stat -c %y "$i"`
-			ffmpeg -i "$i" -n -metadata data="$DATE" -c:v $vcodec -preset $preset -c:a aac -crf $crf "${i%.$extension}.mkv"
+			$FFMPEG -hide_banner -hwaccel cuda -hwaccel_output_format cuda -i "$i" -n -metadata date="$DATE" -c:v $vcodec -bufsize:v 16M -preset $preset -c:a copy "${i%.$extension}.mkv"
+#			$FFMPEG -hide_banner -hwaccel cuda -hwaccel_output_format cuda -i "$i" -n -metadata date="$DATE" -c:v $vcodec -b:v 2.5M -maxrate:v 4M -bufsize:v 8M -rc:v vbr -preset $preset -c:a aac "${i%.$extension}.mkv"
+#			ffmpeg -hide_banner -i "$i" -n -metadata date="$DATE" -c:v $vcodec -b:v 2.5M -maxrate:v 4M -bufsize:v 8M -rc:v vbr_hq -preset $preset -c:a aac -crf $crf "${i%.$extension}.mkv"
 			touch -m --date="$DATE" "${i%.$extension}.mkv"
 		done
 	done
@@ -72,13 +77,38 @@ while getopts "q:t:c:p:d:" opt
 done
 shift $(($OPTIND - 1))
 
-if [ $vcodec == "265" -o $vcodec == "hevc" -o $vcodec == "libx265" ]; then
-	vcodec="libx265"
+
+if [ $vcodec == "nvenc" -o $vcodec == "264_nvenc" -o $vcodec == "nvenc_264" ]; then
+	vcodec="h264_nvenc"
 	preset="slow"
 	if [ ${presetisset} == "TRUE" ]; then
 		preset=$userpreset
 	fi
-	crf=25
+	crf=20
+	if [ ${crfisset} == "TRUE" ]; then
+		crf=$usercrf
+	fi
+fi
+
+if [ $vcodec == "nv265" -o $vcodec == "nvhevc" -o $vcodec == "nvenc_265" -o $vcodec == "nvenc_hevc" ]; then
+	vcodec="hevc_nvenc"
+	preset="p7"
+	if [ ${presetisset} == "TRUE" ]; then
+		preset=$userpreset
+	fi
+	crf=26
+	if [ ${crfisset} == "TRUE" ]; then
+		crf=$usercrf
+	fi
+fi
+
+if [ $vcodec == "265" -o $vcodec == "hevc" -o $vcodec == "libx265" ]; then
+	vcodec="libx265"
+	preset="medium"
+	if [ ${presetisset} == "TRUE" ]; then
+		preset=$userpreset
+	fi
+	crf=26
 	if [ ${crfisset} == "TRUE" ]; then
 		crf=$usercrf
 	fi
@@ -90,7 +120,7 @@ if [ $vcodec == "264" -o $vcodec == "libx264" ]; then
 	if [ ${presetisset} == "TRUE" ]; then
 		preset=$userpreset
 	fi
-	crf=25
+	crf=20
 	if [ ${crfisset} == "TRUE" ]; then
 		crf=$usercrf
 	fi
